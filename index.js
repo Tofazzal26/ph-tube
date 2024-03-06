@@ -10,20 +10,36 @@ const buttonDataLoad = async () => {
     const newButton = document.createElement("button");
     newButton.classList.add(
       "btn",
+      "active",
       "btn-ghost",
       "bg-slate-700",
       "text-white",
       "text-lg"
     );
     newButton.innerText = `${button.category}`;
-    newButton.addEventListener("click", () => cardDataLoad(button.category_id));
+    newButton.addEventListener("click", () => {
+      cardDataLoad(button.category_id);
+      const selectBtn = document.querySelectorAll(".active");
+      for (const btn of selectBtn) {
+        btn.classList.remove("bg-red-600");
+      }
+      newButton.classList.add("bg-red-600");
+    });
     btnContainer.appendChild(newButton);
   });
 };
 
 const firstDataLoad = 1000;
+let sorted = false;
 
-const cardDataLoad = async (id) => {
+const sortedCall = document.getElementById("sort-btn");
+sortedCall.addEventListener("click", () => {
+  sorted = true;
+  cardDataLoad(firstDataLoad, sorted);
+});
+
+const cardDataLoad = async (id, sortedViews) => {
+  const errorData = document.getElementById("error-element");
   const cardContainer = document.getElementById("card-container");
   cardContainer.innerHTML = "";
   const response = await fetch(
@@ -31,6 +47,22 @@ const cardDataLoad = async (id) => {
   );
   const data = await response.json();
   const cardData = data.data;
+  if (sortedViews) {
+    cardData.sort((a, b) => {
+      const totalViewFirst = a.others.views;
+      const totalViewSecond = b.others.views;
+      const totalViewsFirstNumber =
+        parseFloat(totalViewFirst.replace("K", "")) || 0;
+      const totalViewsSecondNumber =
+        parseFloat(totalViewSecond.replace("K", "")) || 0;
+      return totalViewsSecondNumber - totalViewsFirstNumber;
+    });
+  }
+  if (cardData.length === 0) {
+    errorData.classList.remove("hidden");
+  } else {
+    errorData.classList.add("hidden");
+  }
   cardData.forEach((cards) => {
     let verifyBadge = "";
     if (cards.authors[0].verified) {
@@ -68,6 +100,6 @@ const cardDataLoad = async (id) => {
   });
 };
 
-cardDataLoad(firstDataLoad);
+cardDataLoad(firstDataLoad, sorted);
 
 buttonDataLoad();
